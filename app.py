@@ -501,11 +501,10 @@ h1{text-align:center}
 with gr.Blocks(theme=theme, css=css) as interface:
     gr.Markdown(
         """
-    # Fast Subtitle Maker
-    Inference by Groq API  
-    If you are having API Rate Limit issues, you can retry later based on the [rate limits](https://console.groq.com/docs/rate-limits) or <a href="https://huggingface.co/spaces/Nick088/Fast-Subtitle-Maker?duplicate=true" style="display: inline-block;margin-top: .5em;margin-right: .25em;" target="_blank"> <img style="margin-bottom: 0em;display: inline;margin-top: -.25em;" src="https://img.shields.io/badge/-Duplicate%20Space-blue?labelColor=white&style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAP5JREFUOE+lk7FqAkEURY+ltunEgFXS2sZGIbXfEPdLlnxJyDdYB62sbbUKpLbVNhyYFzbrrA74YJlh9r079973psed0cvUD4A+4HoCjsA85X0Dfn/RBLBgBDxnQPfAEJgBY+A9gALA4tcbamSzS4xq4FOQAJgCDwV2CPKV8tZAJcAjMMkUe1vX+U+SMhfAJEHasQIWmXNN3abzDwHUrgcRGmYcgKe0bxrblHEB4E/pndMazNpSZGcsZdBlYJcEL9Afo75molJyM2FxmPgmgPqlWNLGfwZGG6UiyEvLzHYDmoPkDDiNm9JR9uboiONcBXrpY1qmgs21x1QwyZcpvxt9NS09PlsPAAAAAElFTkSuQmCC&logoWidth=14" alt="Duplicate Space"></a> with <a href=https://console.groq.com/keys>your own API Key</a> </p>
-    Hugging Face Space by [Nick088](https://linktr.ee/Nick088)  
-    <br> <a href="https://discord.gg/AQsmBmgEPy"> <img src="https://img.shields.io/discord/1198701940511617164?color=%23738ADB&label=Discord&style=for-the-badge" alt="Discord"> </a>  
+    # Case Study 1 - Fast Subtitle Maker - Team 15
+    Team members: Arturo Lemos, David Datta, and Jose Perez.
+    Inference by Groq API
+    This code was adapted from the [Hugging Face Space](https://huggingface.co/spaces/Nick088/Fast-Subtitle-Maker) by Nick088 to generate subtitles for audio and video files. The model used is the [whisper-large-v3](https://console.groq.com/models/whisper-large-v3) model. You can also use the [distil-whisper-large-v3-en](https://console.groq.com/models/distil-whisper-large-v3-en) model for English language only. The subtitles are generated in the SubRip (SRT) format, which can be uploaded to any video editing app for adding subtitles to your video. You can also choose to include the video with subtitles. The video output will be in MP4 format with the subtitles added. You can also customize the font, font color, font size, outline thickness, and outline color of the subtitles.
     """
     )
 
