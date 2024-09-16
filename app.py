@@ -308,10 +308,12 @@ def generate_subtitles(input_mode, input_file, link_input, prompt, language, aut
     segment_id_offset = 0
 
     if split_status == "split":
+        # Processing chunks when file is split
         srt_chunks = []
         video_chunks = []
         for i, chunk_path in enumerate(processed_path):
             try:
+                # Transcribe each chunk using the model
                 with open(chunk_path, "rb") as file:
                     transcription_json_response = client.audio.transcriptions.create(
                         file=(os.path.basename(chunk_path), file.read()),
@@ -323,7 +325,7 @@ def generate_subtitles(input_mode, input_file, link_input, prompt, language, aut
                     )
                 transcription_json = transcription_json_response.segments
 
-                # Adjust timestamps and segment IDs
+                # Adjust timestamps and IDs
                 for segment in transcription_json:
                     segment['start'] += total_duration
                     segment['end'] += total_duration
@@ -336,73 +338,47 @@ def generate_subtitles(input_mode, input_file, link_input, prompt, language, aut
                 temp_srt_path = f"{os.path.splitext(chunk_path)[0]}.srt"
                 with open(temp_srt_path, "w", encoding="utf-8") as temp_srt_file:
                     temp_srt_file.write(srt_content)
-                    temp_srt_file.write("\n") # add a new line at the end of the srt chunk file to fix format when merged
+                    temp_srt_file.write("\n")  # Newline at end for proper merging
                 srt_chunks.append(temp_srt_path)
 
+                # If the user requested video output with subtitles
                 if include_video and input_file_path.lower().endswith((".mp4", ".webm")):
-                    try:
-                        output_file_path = chunk_path.replace(os.path.splitext(chunk_path)[1], "_with_subs" + os.path.splitext(chunk_path)[1])
-                        # Handle font selection
-                        if font_selection == "Custom Font File" and font_file:
-                            font_name = os.path.splitext(os.path.basename(font_file.name))[0]  # Get font filename without extension
-                            font_dir = os.path.dirname(font_file.name)  # Get font directory path
-                        elif font_selection == "Custom Font File" and not font_file:
-                            font_name = None  # Let FFmpeg use its default Arial
-                            font_dir = None  # No font directory
-                            gr.Warning(f"You want to use a Custom Font File, but uploaded none. Using the default Arial font.")
-                        elif font_selection == "Arial":
-                            font_name = None  # Let FFmpeg use its default Arial
-                            font_dir = None  # No font directory
-                            
-                        # FFmpeg command
-                        subprocess.run(
-                            [
-                                "ffmpeg",
-                                "-y",
-                                "-i",
-                                chunk_path,
-                                "-vf",
-                                f"subtitles={temp_srt_path}:fontsdir={font_dir}:force_style='Fontname={font_name},Fontsize={int(font_size)},PrimaryColour=&H{font_color[1:]}&,OutlineColour=&H{outline_color[1:]}&,BorderStyle={int(outline_thickness)},Outline=1'",
-                                "-preset", "fast",
-                                output_file_path,
-                            ],
-                            check=True,
-                        )
-                        video_chunks.append(output_file_path) 
-                    except subprocess.CalledProcessError as e:
-                        raise gr.Error(f"Error during subtitle addition: {e}")     
-                elif include_video and not input_file_path.lower().endswith((".mp4", ".webm")):
-                    gr.Warning(f"You have checked on the 'Include Video with Subtitles', but the input file {input_file_path} isn't a video (.mp4 or .webm). Returning only the SRT File.", duration=15)
+                    output_file_path = chunk_path.replace(os.path.splitext(chunk_path)[1], "_with_subs" + os.path.splitext(chunk_path)[1])
+                    
+                    # Handle font selection
+                    font_name, font_dir = None, None
+                    if font_selection == "Custom Font File" and font_file:
+                        font_name = os.path.splitext(os.path.basename(font_file.name))[0]
+                        font_dir = os.path.dirname(font_file.name)
+
+                    # FFmpeg command for adding subtitles with customization
+                    ffmpeg_command = [
+                        "ffmpeg",
+                        "-y",
+                        "-i",
+                        chunk_path,
+                        "-vf",
+                        f"subtitles={temp_srt_path}:fontsdir={font_dir if font_selection == 'Custom Font File' else ''}:force_style='Fontname={font_name if font_selection == 'Custom Font File' else 'Arial'},Fontsize={font_size},PrimaryColour=&H{font_color[1:]}&,OutlineColour=&H{outline_color[1:]}&,Outline={outline_thickness}'",
+                        "-preset", "fast",
+                        output_file_path,
+                    ]
+
+                    subprocess.run(ffmpeg_command, check=True)
+                    video_chunks.append(output_file_path)
+
             except groq.AuthenticationError as e:
                 handle_groq_error(e, model)
             except groq.RateLimitError as e:
                 handle_groq_error(e, model)
-                gr.Warning(f"API limit reached during chunk {i+1}. Returning processed chunks only.")
-                if srt_chunks and video_chunks:
-                    merge_audio(video_chunks, 'merged_output_video.mp4')
-                    with open('merged_output.srt', 'w', encoding="utf-8") as outfile:
-                        for chunk_srt in srt_chunks:
-                            with open(chunk_srt, 'r', encoding="utf-8") as infile:
-                                outfile.write(infile.read())
-                    return 'merged_output.srt', 'merged_output_video.mp4'
-                else:
-                    raise gr.Error("Subtitle generation failed due to API limits.")
 
-        # Merge SRT chunks
-        final_srt_path = os.path.splitext(input_file_path)[0] + "_final.srt"
-        with open(final_srt_path, 'w', encoding="utf-8") as outfile:
-            for chunk_srt in srt_chunks:
-                with open(chunk_srt, 'r', encoding="utf-8") as infile:
-                    outfile.write(infile.read())
-
-        # Merge video chunks
+        # Merge the chunks and return the results
         if video_chunks:
             merge_audio(video_chunks, 'merged_output_video.mp4')
-            return final_srt_path, 'merged_output_video.mp4'
+            return 'merged_output_video.mp4', None
         else:
-            return final_srt_path, None
-
-    else:  # Single file processing (no splitting)
+            return full_srt_content, None
+    else:
+        # Process single file (no splitting)
         try:
             with open(processed_path, "rb") as file:
                 transcription_json_response = client.audio.transcriptions.create(
@@ -414,49 +390,37 @@ def generate_subtitles(input_mode, input_file, link_input, prompt, language, aut
                     temperature=0.0,
                 )
             transcription_json = transcription_json_response.segments
-
             srt_content = json_to_srt(transcription_json)
             temp_srt_path = os.path.splitext(input_file_path)[0] + ".srt"
             with open(temp_srt_path, "w", encoding="utf-8") as temp_srt_file:
                 temp_srt_file.write(srt_content)
 
+            # If including the video with subtitles
             if include_video and input_file_path.lower().endswith((".mp4", ".webm")):
-                try:
-                    output_file_path = input_file_path.replace(
-                        os.path.splitext(input_file_path)[1], "_with_subs" + os.path.splitext(input_file_path)[1]
-                    )
-                    # Handle font selection
-                    if font_selection == "Custom Font File" and font_file:
-                        font_name = os.path.splitext(os.path.basename(font_file.name))[0]  # Get font filename without extension
-                        font_dir = os.path.dirname(font_file.name)  # Get font directory path
-                    elif font_selection == "Custom Font File" and not font_file:
-                        font_name = None  # Let FFmpeg use its default Arial
-                        font_dir = None  # No font directory
-                        gr.Warning(f"You want to use a Custom Font File, but uploaded none. Using the default Arial font.")
-                    elif font_selection == "Arial":
-                        font_name = None  # Let FFmpeg use its default Arial
-                        font_dir = None  # No font directory
+                output_file_path = input_file_path.replace(
+                    os.path.splitext(input_file_path)[1], "_with_subs" + os.path.splitext(input_file_path)[1]
+                )
 
-                    # FFmpeg command
-                    subprocess.run(
-                        [
-                            "ffmpeg",
-                            "-y",
-                            "-i",
-                            input_file_path,
-                            "-vf",
-                            f"subtitles={temp_srt_path}:fontsdir={font_dir}:force_style='FontName={font_name},Fontsize={int(font_size)},PrimaryColour=&H{font_color[1:]}&,OutlineColour=&H{outline_color[1:]}&,BorderStyle={int(outline_thickness)},Outline=1'",
-                            "-preset", "fast",
-                            output_file_path,
-                        ],
-                        check=True,
-                    )
-                    return temp_srt_path, output_file_path
-                except subprocess.CalledProcessError as e:
-                    raise gr.Error(f"Error during subtitle addition: {e}")
-            elif include_video and not input_file_path.lower().endswith((".mp4", ".webm")):
-                gr.Warning(f"You have checked on the 'Include Video with Subtitles', but the input file {input_file_path} isn't a video (.mp4 or .webm). Returning only the SRT File.", duration=15)
-            
+                font_name, font_dir = None, None
+                if font_selection == "Custom Font File" and font_file:
+                    font_name = os.path.splitext(os.path.basename(font_file.name))[0]
+                    font_dir = os.path.dirname(font_file.name)
+
+                # Add subtitles using FFmpeg
+                ffmpeg_command = [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    input_file_path,
+                    "-vf",
+                    f"subtitles={temp_srt_path}:fontsdir={font_dir if font_selection == 'Custom Font File' else ''}:force_style='Fontname={font_name if font_selection == 'Custom Font File' else 'Arial'},Fontsize={font_size},PrimaryColour=&H{font_color[1:]}&,OutlineColour=&H{outline_color[1:]}&,Outline={outline_thickness}'",
+                    "-preset", "fast",
+                    output_file_path,
+                ]
+
+                subprocess.run(ffmpeg_command, check=True)
+                return temp_srt_path, output_file_path
+
             return temp_srt_path, None
         except groq.AuthenticationError as e:
             handle_groq_error(e, model)
@@ -464,6 +428,7 @@ def generate_subtitles(input_mode, input_file, link_input, prompt, language, aut
             handle_groq_error(e, model)
         except ValueError as e:
             raise gr.Error(f"Error creating SRT file: {e}")
+
 
 
 theme = gr.themes.Soft(
