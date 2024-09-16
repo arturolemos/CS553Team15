@@ -295,28 +295,6 @@ def json_to_srt(transcription_json):
 
     return '\n'.join(srt_lines)
 
-def measure_response_time(func, *args, **kwargs):
-    start_time = time.time()
-    result = func(*args, **kwargs)
-    end_time = time.time()
-    response_time = end_time - start_time
-    return response_time, result
-
-def measure_resource_usage(func, *args, **kwargs):
-    process = psutil.Process(os.getpid())
-    start_memory = process.memory_info().rss
-    start_cpu = process.cpu_percent(interval=None)
-    
-    result = func(*args, **kwargs)
-    
-    end_memory = process.memory_info().rss
-    end_cpu = process.cpu_percent(interval=None)
-    
-    memory_usage = end_memory - start_memory
-    cpu_usage = end_cpu - start_cpu
-    
-    return memory_usage, cpu_usage, result
-
 
 def generate_subtitles(input_mode, input_file, link_input, prompt, language, auto_detect_language, model, include_video, font_selection, font_file, font_color, font_size, outline_thickness, outline_color):
     if input_mode == "Upload Video/Audio File":
@@ -486,13 +464,6 @@ def generate_subtitles(input_mode, input_file, link_input, prompt, language, aut
             handle_groq_error(e, model)
         except ValueError as e:
             raise gr.Error(f"Error creating SRT file: {e}")
-
-response_time, result = measure_response_time(generate_subtitles, input_mode, input_file, link_input, prompt, language, auto_detect_language, model, include_video, font_selection, font_file, font_color, font_size, outline_thickness, outline_color)
-memory_usage, cpu_usage, result = measure_resource_usage(generate_subtitles, input_mode, input_file, link_input, prompt, language, auto_detect_language, model, include_video, font_selection, font_file, font_color, font_size, outline_thickness, outline_color)
-
-print(f"Response Time: {response_time} seconds")
-print(f"Memory Usage: {memory_usage} bytes")
-print(f"CPU Usage: {cpu_usage} %")
 
 
 theme = gr.themes.Soft(
