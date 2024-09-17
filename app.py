@@ -467,82 +467,34 @@ def generate_subtitles(input_mode, input_file, link_input, prompt, language, aut
 
 
 theme = gr.themes.Soft(
-    primary_hue="indigo",
-    secondary_hue="orange",
-    neutral_hue="gray"
+    primary_hue="sky",
+    secondary_hue="blue",
+    neutral_hue="neutral"
 ).set(
-    border_color_primary='*neutral_500',
-    block_border_width='2px',
-    block_border_width_dark='2px',
-    block_title_border_color='*secondary_300',
-    block_title_border_color_dark='*secondary_400',
-    input_background_fill_focus='*secondary_200',
-    input_border_color='*primary_hue',
-    input_border_color_focus='*secondary_600',
-    input_border_width='2px',
-    input_border_width_dark='2px',
+    border_color_primary='*neutral_300',
+    block_border_width='1px',
+    block_border_width_dark='1px',
+    block_title_border_color='*secondary_100',
+    block_title_border_color_dark='*secondary_200',
+    input_background_fill_focus='*secondary_300',
+    input_border_color='*border_color_primary',
+    input_border_color_focus='*secondary_500',
+    input_border_width='1px',
+    input_border_width_dark='1px',
     slider_color='*secondary_500',
-    slider_color_dark='*secondary_700'
+    slider_color_dark='*secondary_600'
 )
 
 css = """
-.gradio-container {
-    max-width: 1400px !important;
-    background-color: #f0f4f8;
-    color: #333;
-}
-
-h1 {
-    text-align: center;
-    color: #4A90E2;
-}
-
+.gradio-container{max-width: 1400px !important}
+h1{text-align:center}
 .extra-option {
     display: none;
 }
-
 .extra-option.visible {
     display: block;
 }
-
-.gradio-button {
-    background-color: #4A90E2;
-    color: #fff;
-    border: 1px solid #4A90E2;
-}
-
-.gradio-button:hover {
-    background-color: #357ABD;
-    border-color: #357ABD;
-}
-
-.gr-input {
-    border: 2px solid #4A90E2;
-    background-color: #f7f9fc;
-    color: #333;
-}
-
-.gr-input:focus {
-    border-color: #F5A623;
-}
-
-.gr-slider {
-    background-color: #F5A623;
-}
-
-.gr-slider-dark {
-    background-color: #F57C00;
-}
-
-.gr-colorpicker {
-    border-color: #F5A623;
-}
-
-.gr-video {
-    border: 2px solid #F5A623;
-}
 """
-
 
 
 
